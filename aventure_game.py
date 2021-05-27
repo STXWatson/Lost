@@ -4,6 +4,7 @@
 from time import sleep
 import sys
 
+
 def intro():
     print("This is where you introduce your game and say hello.")
     print("Perhaps add some pauses for effect...")
@@ -18,12 +19,13 @@ def intro():
 
     # flags is a dictionary that can store when something special happens
     # Allow something you do in one room to affect other rooms
-    flags = {"flag1": False}
+    flags = {"flag1": False, "flag2": False}
 
     room_1(pocket, flags)   # this is your starting room
 
+
 def help_txt():
-    print("""You can type "north", "south", "east", "west" to move in that direction.""")
+    print("""You can type "north", "south", "east", "west", "up", "down" to move in that direction.""")
     print("""You can type "pocket" to see what rubbish is in there.""")
     print("""Type "look" to see what objects are available and the name of the object to take it.""")
     print("""Some items can be used once you pick them up by typing "use" and then the item name.""")
@@ -35,6 +37,7 @@ def help_txt():
 ### these are the general functions used everywhere ###
 #######################################################
 
+
 def open_pocket(pocket):
 # displays what's in yer pocket #
     for item in pocket.keys():
@@ -42,10 +45,12 @@ def open_pocket(pocket):
             print(item)
     return
 
+
 def items_available(initial_items, pocket):
 # looks at the initial items and ignores anything in your pocket
     available_items = [item for item in initial_items if item not in pocket.keys()]
     return available_items
+
 
 def check_txt(txt, initial_items, pocket, doors, flags, location_text, door_text):
 # general function to respond to words pocket, exit, look, exit, etc
@@ -67,11 +72,13 @@ def check_txt(txt, initial_items, pocket, doors, flags, location_text, door_text
         pocket[txt] = True
     elif txt == "where":
         print(location_text)
-    elif txt == "doors":
+    elif txt == "doors":   # doors = {"north": ["lounge", True]}
         print(door_text)
-    elif txt in doors.keys():
-        eval(doors[txt] + "(pocket, flags)")
-    elif txt in ["north", "south", "east", "west"] and txt not in doors.keys():
+    elif txt in doors.keys() and doors.get(txt)[1]:
+        eval(doors[txt][0] + "(pocket, flags)")
+    elif txt in doors.keys() and not doors.get(txt[1]):
+        print("The way", txt, "is locked.")
+    elif txt in ["north", "south", "east", "west", "up", "down"] and txt not in doors.keys():
         print("You can't go in that direction.")
     elif txt == "help":
         help_txt()
@@ -83,12 +90,13 @@ def check_txt(txt, initial_items, pocket, doors, flags, location_text, door_text
 ### These are the functions for the different locations ###
 ###########################################################
 
+
 def room_1(pocket, flags):
 
     location_text = "Welcome to room 1."
     door_txt = "There is a door to the south."
     initial_items = ["item 1"]
-    doors = {"south": "room_2"}
+    doors = {"south": ["room_2", True]}   # format is {direction:[destination,  boolean]}, boolean denotes locked/unlocked
 
     print(location_text)
     sleep(1)
@@ -105,12 +113,13 @@ def room_1(pocket, flags):
             flags["flag1"] = True
             pocket["item 1"] = False
 
+
 def room_2(pocket, flags):
 
     location_text = "Welcome to room 2."
     door_txt = "There are doors to the north and west."
     initial_items = ["item 2"]
-    doors = {"north": "room_1", "west": "room_3"}
+    doors = {"north": ["room_1", True], "west": ["room_3", True]}
 
     print(location_text)
     sleep(1)
@@ -126,12 +135,16 @@ def room_2(pocket, flags):
         elif txt == "use item 2" and "item 2" in pocket.values() and not flags["flag1"]:
             print("I see you haven't used item 1 in room 1 yet, so you can't use item 2.")
 
+
 def room_3(pocket, flags):
 
     location_text = "Welcome to room 3."
-    door_txt = "There is a door to the east."
-    initial_items = ["item 3"]
-    doors = {"east": "room_2"}
+    door_txt = "There is a door to the east and a trapdoor leading down."
+    initial_items = ["key"]
+    if flags["flag2"]:
+        doors = {"east": ["room_2", True], "down": ["room_4", True]} #if used key, door unlocked
+    else:
+        doors = {"east": ["room_2", True], "down": ["room_4", False]}  # else door locked
 
     print(location_text)
     sleep(1)
@@ -142,7 +155,27 @@ def room_3(pocket, flags):
         pocket = check_txt(txt, initial_items, pocket, doors, flags, location_text, door_txt)
 
     # section for special item use
+        if txt == "use key" and "key" in pocket:
+            print("You have unlocked the trapdoor going down!")
+            flags["flag2"] = True
+            doors = {"east": ["room_2", True], "down": ["room_4", True]}
 
+def room_4(pocket, flags):
+
+    location_text = "Welcome to room 4."
+    door_txt = "There are stairs going up."
+    initial_items = []
+    doors = {"up": ["room_3", True]}
+
+    print(location_text)
+    sleep(1)
+    print(door_txt)
+
+    while True:
+        txt = input(">")
+        pocket = check_txt(txt, initial_items, pocket, doors, flags, location_text, door_txt)
+
+    # section for special item use
 
 ### add more room functions here BEFORE the "intro()" or nothing works! HAHAHAH! ####
 
